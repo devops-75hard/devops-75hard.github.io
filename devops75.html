@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevOps 75 Hard — The Infrastructure Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --purple: #8b5cf6;
+    --purple-light: #a78bfa;
+    --blue: #60a5fa;
+    --glass-bg: rgba(255,255,255,0.035);
+    --glass-border: rgba(255,255,255,0.08);
+    --text-muted: rgba(255,255,255,0.32);
+    --text-dim: rgba(255,255,255,0.13);
+  }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'DM Sans', sans-serif; color: #fff; }
+
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 10% 0%, rgba(109,40,217,0.18) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 100%, rgba(37,99,235,0.13) 0%, transparent 55%),
+      #060c1c;
+    z-index: 0;
+  }
+
+  .deck { width: 100%; height: 100vh; position: relative; overflow: hidden; z-index: 1; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 80px;
+    opacity: 0; transform: translateX(48px);
+    transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1);
+    pointer-events: none;
+  }
+  .slide.active { opacity: 1; transform: translateX(0); pointer-events: all; }
+  .slide.exit-left { opacity: 0; transform: translateX(-48px); }
+
+  .glass {
+    position: relative; z-index: 2;
+    background: var(--glass-bg); border: 1px solid var(--glass-border);
+    border-radius: 24px; padding: 52px 56px;
+    max-width: 760px; width: 100%;
+    backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
+    text-align: center;
+  }
+
+  .tag {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+    color: #c4b5fd; border-radius: 50px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase;
+    padding: 5px 14px; margin-bottom: 28px;
+  }
+  .tag::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #8b5cf6; box-shadow: 0 0 6px #8b5cf6; }
+
+  .hero-title { font-family: 'Syne', sans-serif; font-size: clamp(26px, 3.6vw, 48px); font-weight: 800; line-height: 1.1; letter-spacing: -0.025em; color: #fff; margin-bottom: 8px; }
+  .hero-title .acc { background: linear-gradient(95deg, #c4b5fd 0%, #60a5fa 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .hero-subtitle { font-family: 'Syne', sans-serif; font-size: clamp(17px, 2.2vw, 28px); font-weight: 600; line-height: 1.3; letter-spacing: -0.015em; color: rgba(255,255,255,0.42); margin-bottom: 20px; }
+  .hero-sub { color: var(--text-muted); font-size: 14.5px; line-height: 1.9; max-width: 500px; margin: 0 auto; }
+  .hero-sub em { color: rgba(255,255,255,0.58); font-style: normal; }
+  .divider { height: 1px; background: rgba(255,255,255,0.06); margin: 28px 0; }
+
+  .btn-row { display: flex; gap: 10px; justify-content: center; margin-top: 28px; flex-wrap: wrap; }
+  .btn-p { background: linear-gradient(135deg, #7c3aed, #4f46e5); border: none; color: #fff; padding: 12px 28px; border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; box-shadow: 0 4px 20px rgba(109,40,217,0.35); transition: transform 0.15s, box-shadow 0.15s; }
+  .btn-p:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(109,40,217,0.45); }
+  .btn-g { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09); color: rgba(255,255,255,0.36); padding: 12px 24px; border-radius: 10px; font-size: 13.5px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: border-color 0.15s, color 0.15s; }
+  .btn-g:hover { border-color: rgba(255,255,255,0.18); color: rgba(255,255,255,0.6); }
+
+  .story-prose { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
+  .story-prose p { font-size: 14.5px; line-height: 1.9; color: rgba(255,255,255,0.35); }
+  .story-prose p:first-child { color: rgba(255,255,255,0.55); font-size: 15.5px; }
+  .story-prose em { color: rgba(255,255,255,0.75); font-style: normal; font-weight: 500; }
+  .slide-title { font-family: 'Syne', sans-serif; font-size: clamp(20px, 2.8vw, 34px); font-weight: 800; letter-spacing: -0.02em; color: #fff; margin-bottom: 4px; }
+  .slide-sub { font-size: 13.5px; color: var(--text-muted); margin-bottom: 24px; line-height: 1.7; }
+
+  /* ── CHECKLIST ── */
+  .checklist-wrap { max-height: 54vh; overflow-y: auto; padding-right: 4px; margin-top: 4px; }
+  .checklist-wrap::-webkit-scrollbar { width: 3px; }
+  .checklist-wrap::-webkit-scrollbar-track { background: transparent; }
+  .checklist-wrap::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.25); border-radius: 3px; }
+  .checklist { display: flex; flex-direction: column; gap: 7px; text-align: left; }
+
+  .check-item {
+    display: grid; grid-template-columns: 28px 1fr auto; align-items: center; gap: 14px;
+    background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.055);
+    border-radius: 12px; padding: 14px 18px; text-decoration: none;
+    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+    position: relative; overflow: hidden;
+  }
+  .check-item::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(180deg, #8b5cf6, #60a5fa); opacity: 0; transition: opacity 0.2s; border-radius: 3px 0 0 3px; }
+  .check-item:hover { background: rgba(139,92,246,0.07); border-color: rgba(139,92,246,0.22); transform: translateX(3px); }
+  .check-item:hover::before { opacity: 1; }
+  .item-num { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: rgba(139,92,246,0.40); letter-spacing: 0.04em; text-align: center; transition: color 0.2s; }
+  .check-item:hover .item-num { color: rgba(139,92,246,0.85); }
+  .item-body { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+  .item-line { font-size: 13px; font-weight: 400; color: rgba(255,255,255,0.55); font-family: 'DM Sans', sans-serif; line-height: 1.55; }
+  .item-line strong { font-weight: 700; color: rgba(255,255,255,0.88); }
+  .check-item:hover .item-line { color: rgba(255,255,255,0.70); }
+  .check-item:hover .item-line strong { color: #fff; }
+
+  .item-tag { font-size: 9px; font-weight: 700; letter-spacing: 0.11em; text-transform: uppercase; padding: 3px 9px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+  .item-tag.aws  { background: rgba(245,158,11,0.10); color: #fbbf24; border: 1px solid rgba(245,158,11,0.15); }
+  .item-tag.sec  { background: rgba(139,92,246,0.10); color: #a78bfa; border: 1px solid rgba(139,92,246,0.18); }
+  .item-tag.cost { background: rgba(34,197,94,0.09);  color: #4ade80; border: 1px solid rgba(34,197,94,0.15); }
+  .item-tag.crit { background: rgba(239,68,68,0.10);  color: #f87171; border: 1px solid rgba(239,68,68,0.18); }
+
+  .slide.active .check-item { animation: fadeUp 0.35s cubic-bezier(0.4,0,0.2,1) both; }
+  .slide.active .check-item:nth-child(1) { animation-delay: 0.04s; }
+  .slide.active .check-item:nth-child(2) { animation-delay: 0.09s; }
+  .slide.active .check-item:nth-child(3) { animation-delay: 0.14s; }
+  .slide.active .check-item:nth-child(4) { animation-delay: 0.19s; }
+  .slide.active .check-item:nth-child(5) { animation-delay: 0.24s; }
+  .slide.active .check-item:nth-child(6) { animation-delay: 0.29s; }
+  .slide.active .check-item:nth-child(7) { animation-delay: 0.34s; }
+  .slide.active .check-item:nth-child(8) { animation-delay: 0.39s; }
+  .slide.active .check-item:nth-child(9) { animation-delay: 0.44s; }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .scroll-hint { font-size: 10px; color: rgba(255,255,255,0.12); letter-spacing: 0.12em; text-transform: uppercase; text-align: center; margin-top: 10px; }
+
+  /* ── BLOG ── */
+  .blog-outer { width: 100%; max-width: 900px; max-height: 84vh; overflow-y: auto; padding-right: 6px; position: relative; z-index: 2; }
+  .blog-outer::-webkit-scrollbar { width: 3px; }
+  .blog-outer::-webkit-scrollbar-track { background: transparent; }
+  .blog-outer::-webkit-scrollbar-thumb { background: rgba(139,92,246,0.25); border-radius: 3px; }
+
+  .blog-card { background: var(--glass-bg); border: 1px solid var(--glass-border); border-radius: 24px; padding: 52px 56px; backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); box-shadow: 0 32px 80px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07); text-align: left; }
+
+  .blog-header { text-align: center; margin-bottom: 52px; }
+  .blog-header .tag { margin-bottom: 20px; }
+  .blog-header h2 { font-family: 'Syne', sans-serif; font-size: clamp(22px, 3vw, 38px); font-weight: 800; letter-spacing: -0.025em; color: #fff; line-height: 1.1; margin-bottom: 12px; }
+  .blog-header p { font-size: 14px; color: var(--text-muted); line-height: 1.85; max-width: 580px; margin: 0 auto; }
+
+  .blog-entry { margin-bottom: 52px; padding-bottom: 52px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .blog-entry:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .blog-entry-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+  .blog-num { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; color: rgba(139,92,246,0.45); letter-spacing: 0.06em; margin-top: 5px; flex-shrink: 0; }
+  .blog-title-wrap { flex: 1; }
+  .blog-entry-title { font-family: 'Syne', sans-serif; font-size: clamp(16px, 1.9vw, 22px); font-weight: 700; color: #fff; letter-spacing: -0.015em; line-height: 1.2; margin-bottom: 5px; }
+  .blog-entry-hook { font-size: 12.5px; font-style: italic; color: rgba(139,92,246,0.75); line-height: 1.5; }
+
+  /* ── Rich blog body ── */
+  .blog-body { display: flex; flex-direction: column; gap: 14px; }
+
+  .blog-body p { font-size: 13.5px; line-height: 2; color: rgba(255,255,255,0.45); }
+  .blog-body p em { color: rgba(255,255,255,0.78); font-style: normal; font-weight: 500; }
+
+  .blog-body h4 {
+    font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700;
+    color: rgba(255,255,255,0.55); letter-spacing: 0.1em; text-transform: uppercase;
+    margin-top: 6px; margin-bottom: -4px;
+  }
+
+  /* step list */
+  .blog-steps { display: flex; flex-direction: column; gap: 8px; margin: 4px 0; }
+  .blog-step {
+    display: flex; align-items: flex-start; gap: 12px;
+    background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05);
+    border-radius: 10px; padding: 12px 16px;
+  }
+  .step-n { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 800; color: #8b5cf6; letter-spacing: 0.05em; flex-shrink: 0; margin-top: 2px; min-width: 20px; }
+  .step-body { font-size: 13px; line-height: 1.75; color: rgba(255,255,255,0.42); }
+  .step-body strong { color: rgba(255,255,255,0.75); font-weight: 600; }
+
+  /* callout box */
+  .callout {
+    display: flex; align-items: flex-start; gap: 12px;
+    border-radius: 10px; padding: 14px 16px; margin: 2px 0;
+  }
+  .callout.warn { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.15); }
+  .callout.tip  { background: rgba(34,197,94,0.06);  border: 1px solid rgba(34,197,94,0.12); }
+  .callout.info { background: rgba(96,165,250,0.07); border: 1px solid rgba(96,165,250,0.14); }
+  .callout.danger { background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.18); }
+  .callout-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+  .callout-text { font-size: 12.5px; line-height: 1.75; color: rgba(255,255,255,0.45); }
+  .callout-text strong { color: rgba(255,255,255,0.72); font-weight: 600; }
+
+  /* inline code */
+  .code { font-family: 'Courier New', monospace; font-size: 11.5px; background: rgba(139,92,246,0.12); color: #c4b5fd; padding: 2px 7px; border-radius: 4px; border: 1px solid rgba(139,92,246,0.18); white-space: nowrap; }
+
+  /* key-value list */
+  .kv-list { display: flex; flex-direction: column; gap: 6px; margin: 4px 0; }
+  .kv { display: flex; align-items: baseline; gap: 10px; font-size: 13px; }
+  .kv-key { color: rgba(255,255,255,0.65); font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .kv-val { color: rgba(255,255,255,0.35); line-height: 1.6; }
+
+  .blog-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .blog-pill { font-size: 10px; font-weight: 600; color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 5px; padding: 3px 10px; letter-spacing: 0.05em; }
+
+  .blog-footer { text-align: center; margin-top: 44px; padding-top: 36px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .blog-footer p { font-size: 13px; color: rgba(255,255,255,0.22); margin-bottom: 18px; }
+
+  /* ── NAV ── */
+  .nav-arrow { position: fixed; top: 50%; transform: translateY(-50%); z-index: 100; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; width: 46px; height: 64px; display: flex; align-items: center; justify-content: center; cursor: pointer; backdrop-filter: blur(12px); transition: all 0.2s; color: rgba(255,255,255,0.25); }
+  .nav-arrow:hover { background: rgba(139,92,246,0.12); border-color: rgba(139,92,246,0.30); color: rgba(255,255,255,0.75); }
+  .nav-arrow.disabled { opacity: 0.15; pointer-events: none; }
+  .nav-left { left: 24px; } .nav-right { right: 24px; }
+  .nav-arrow svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+  .dots { position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 7px; z-index: 100; }
+  .dot { width: 5px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.12); cursor: pointer; transition: all 0.3s; }
+  .dot.active { width: 20px; background: #8b5cf6; }
+  .slide-num { position: fixed; bottom: 26px; right: 36px; font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.12); letter-spacing: 0.1em; z-index: 100; font-family: 'DM Sans', sans-serif; }
+  .brand { position: fixed; top: 26px; left: 36px; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.15); z-index: 100; }
+  .brand span { color: rgba(139,92,246,0.7); }
+</style>
+</head>
+<body>
+
+<div class="brand"><span>DevOps</span> 75 Hard</div>
+<button class="nav-arrow nav-left disabled" id="btnPrev" onclick="navigate(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>
+<button class="nav-arrow nav-right" id="btnNext" onclick="navigate(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>
+<div class="dots">
+  <div class="dot active" onclick="goTo(0)"></div>
+  <div class="dot" onclick="goTo(1)"></div>
+  <div class="dot" onclick="goTo(2)"></div>
+  <div class="dot" onclick="goTo(3)"></div>
+</div>
+<div class="slide-num" id="slideNum">01 / 04</div>
+
+<div class="deck">
+
+<!-- ══ SLIDE 1: HERO ══ -->
+<div class="slide active" id="slide-0">
+  <div class="glass">
+    <div class="tag">The Infrastructure Playbook</div>
+    <h1 class="hero-title">I scaled <span class="acc">AWS infrastructure</span><br>to 100K+ concurrent users.</h1>
+    <p class="hero-subtitle">Here's what I'd set up if I were to do it again<br>before writing a single line of infra.</p>
+    <p class="hero-sub">No one taught me this. Your <em>favourite course-selling creator</em> won't share it either.</p>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn-g" onclick="goTo(1)">My Story</button>
+      <button class="btn-p" onclick="goTo(2)">Explore the Checklist →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 2: STORY ══ -->
+<div class="slide" id="slide-1">
+  <div class="glass" style="max-width:820px; text-align:left;">
+    <div class="tag" style="display:inline-flex;">My Story</div>
+    <h2 class="slide-title">Not a course. Just context.</h2>
+    <p class="slide-sub">Where I came from, what I built, and why I'm sharing it.</p>
+    <div class="story-prose">
+      <p>My last company was an early stage startup, growing rapidly. How did it turn out?</p>
+      <p>Well, I've seen what it takes to go from zero to <em>100,000+ concurrent users across 75 microservices.</em> I've made the mistakes you make when you're moving fast — and learning even faster. I've fixed things at 2am that I should have designed better at 2pm.</p>
+      <p>Along the way, I became the person the team turned to for cloud costs, security, reliability, and shipping — not because it was in my job description, but because we didn't have the budget to hire and someone had to step up.</p>
+      <p>That's the thing about early-stage startups. They don't give you a career ladder. They give you problems and see what you do with them.</p>
+      <p>I'm grateful for every one of those problems.</p>
+    </div>
+    <div class="btn-row" style="margin-top:22px; justify-content:flex-start;">
+      <button class="btn-g" onclick="goTo(0)">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 3: CHECKLIST ══ -->
+<div class="slide" id="slide-2">
+  <div class="glass" style="max-width:860px; padding:44px 52px;">
+    <div class="tag">The AWS Setup Checklist</div>
+    <div class="checklist-wrap">
+      <div class="checklist">
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">01</span><div class="item-body"><span class="item-line"><strong>AWS Organizations</strong> — The first decision that makes or breaks your compliance.</span></div><span class="item-tag aws">AWS</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">02</span><div class="item-body"><span class="item-line"><strong>IAM Identity Center</strong> — Stop creating IAM users. There's a better way and it takes 10 minutes.</span></div><span class="item-tag sec">Security</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">03</span><div class="item-body"><span class="item-line"><strong>Lock the Root Account</strong> — PEAK SECURITY PRIORITY. NO EXCEPTIONS.</span></div><span class="item-tag crit">Critical</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">04</span><div class="item-body"><span class="item-line"><strong>Cost Anomaly Detection</strong> — Get notified before your costs explode out of control.</span></div><span class="item-tag cost">Cost</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">05</span><div class="item-body"><span class="item-line"><strong>GuardDuty</strong> — Someone is mining crypto on your AWS bill right now. Would you even know?</span></div><span class="item-tag sec">Security</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">06</span><div class="item-body"><span class="item-line"><strong>Inspector</strong> — Your infra is being scanned by attackers daily. Are you scanning it first?</span></div><span class="item-tag sec">Security</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">07</span><div class="item-body"><span class="item-line"><strong>Security Hub</strong> — You can't fix what you can't see. This is your security in one view.</span></div><span class="item-tag sec">Security</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">08</span><div class="item-body"><span class="item-line"><strong>CloudTrail</strong> — Every action. Every account. Every user. All logged.</span></div><span class="item-tag sec">Security</span></a>
+        <a class="check-item" href="#" onclick="goTo(3); return false;"><span class="item-num">09</span><div class="item-body"><span class="item-line"><strong>Service Control Policies (SCPs)</strong> — The second decision that makes or breaks your compliance.</span></div><span class="item-tag aws">AWS</span></a>
+      </div>
+    </div>
+    <p class="scroll-hint">scroll for more ↓</p>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn-p" onclick="goTo(3)">Read the Full Breakdown →</button>
+      <button class="btn-g" onclick="goTo(0)">← Back to Start</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SLIDE 4: BLOG ══ -->
+<div class="slide" id="slide-3">
+  <div class="blog-outer">
+    <div class="blog-card">
+
+      <div class="blog-header">
+        <div class="tag">Full Breakdown</div>
+        <h2>The Infrastructure Playbook</h2>
+        <p>A practical guide to the nine things you must set up on AWS before running any workload. These aren't optional best practices — they are the foundation. Skip them and you'll pay for it later, either in money, security incidents, or a 2am outage.</p>
+      </div>
+
+      <!-- ════ 01 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">01</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">AWS Organizations — Multi-Account Structure</div>
+            <div class="blog-entry-hook">The first decision that makes or breaks your compliance.</div>
+          </div>
+          <span class="item-tag aws">AWS</span>
+        </div>
+        <div class="blog-body">
+          <p>The moment you sign up for AWS, you have a <em>management account</em> (also called the root account). Most people make the mistake of running everything in this one account — their application, their databases, their CI/CD pipelines, all of it. This is a problem that compounds over time.</p>
+
+          <h4>Why a single account is a liability</h4>
+          <p>When everything runs in one account, a misconfigured IAM role can give a developer access to production. A runaway process in dev can rack up costs that are indistinguishable from prod spend. There's no blast radius — a mistake anywhere affects everything. Compliance frameworks like SOC 2 and ISO 27001 explicitly require environment separation, and you cannot pass an audit with a single-account setup.</p>
+
+          <h4>How to structure it</h4>
+          <div class="kv-list">
+            <div class="kv"><span class="kv-key">Management Account</span><span class="kv-val">Billing, SCPs, and org-level controls only. No workloads. No EC2. No RDS. Nothing.</span></div>
+            <div class="kv"><span class="kv-key">Common Services Account</span><span class="kv-val">Internal tooling — Jenkins, SonarQube, Nexus, Artifactory, Vault. Shared infrastructure that every environment needs access to.</span></div>
+            <div class="kv"><span class="kv-key">Environment Accounts</span><span class="kv-val">One per environment: Dev, QA, UAT, Staging, Prod, DR. Your actual workloads live here, isolated from each other.</span></div>
+          </div>
+
+          <h4>Networking between accounts</h4>
+          <p>The Common Services account should be <em>VPC-peered</em> with each environment account so your pipelines, artifact repositories, and internal tools can reach them. But here is a critical rule: <em>environment accounts must not be peered with each other</em>. Dev should never have a network route to Prod. This is both a security requirement and a compliance one — lateral movement between environments is a finding in every serious audit.</p>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <span class="callout-text"><strong>Common mistake:</strong> Creating the account structure after you've already deployed workloads. Migrating resources between AWS accounts is painful and time-consuming. Get this right on day one — retrofitting an org structure onto a running system is months of work.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">AWS Organizations</span><span class="blog-pill">VPC Peering</span><span class="blog-pill">Multi-Account</span><span class="blog-pill">Blast Radius</span><span class="blog-pill">Environment Isolation</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 02 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">02</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">IAM Identity Center</div>
+            <div class="blog-entry-hook">Stop creating IAM users. There's a better way and it takes 10 minutes.</div>
+          </div>
+          <span class="item-tag sec">Security</span>
+        </div>
+        <div class="blog-body">
+          <p>The classic approach most tutorials teach is: go to IAM, create a user, attach a policy, hand over an access key. This works. But it creates a mess that grows quietly in the background until it bites you. Access keys get shared over Slack. Users leave and their credentials sit active for months. Nobody remembers which policies are attached to which users. MFA is optional and gets skipped.</p>
+
+          <h4>What IAM Identity Center does differently</h4>
+          <p>IAM Identity Center is the centralised access management layer for your entire AWS Organisation. Instead of creating IAM users inside each account, you manage all your people in one place and assign them <em>permission sets</em> — predefined roles — across whichever member accounts they need. Access is tied to an email identity, not a static credential.</p>
+
+          <h4>How to set it up</h4>
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Enable IAM Identity Center from the management account. It's a one-click enable in the AWS console under <strong>Security, Identity &amp; Compliance</strong>.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Choose your identity source. If you use <strong>Google Workspace, Okta, or Azure AD</strong>, connect it via SAML so users log in with their existing credentials. If you have no IdP, use the built-in Identity Center directory.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">Create <strong>Permission Sets</strong> — these are the equivalent of roles. Common ones: ReadOnly, Developer, DevOps, Billing, Admin. Scope each one tightly using AWS managed policies or custom inline policies.</span></div>
+            <div class="blog-step"><span class="step-n">04</span><span class="step-body">Assign users or groups to accounts with the appropriate permission set. A developer gets Developer access to Dev and QA. They do not get access to Prod unless explicitly assigned.</span></div>
+            <div class="blog-step"><span class="step-n">05</span><span class="step-body">Share the <strong>AWS access portal URL</strong> with your team. They log in with their email, see only the accounts they have access to, and can assume their role via browser or CLI using <code class="code">aws sso login</code>.</span></div>
+          </div>
+
+          <h4>What this solves automatically</h4>
+          <p>MFA is enforced by default — users cannot log in without it. When someone leaves, you disable or remove them from your IdP and their access to every AWS account is gone instantly. No access key rotation. No trawling through five accounts to remove an IAM user. No forgotten credentials.</p>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <span class="callout-text"><strong>If you already have IAM users:</strong> Don't delete them on day one. Audit who is using them, migrate those users to Identity Center, verify access is working, then delete. Rushing this can lock people out of production.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">IAM Identity Center</span><span class="blog-pill">SSO</span><span class="blog-pill">MFA</span><span class="blog-pill">Permission Sets</span><span class="blog-pill">SAML</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 03 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">03</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">Lock the Root Account</div>
+            <div class="blog-entry-hook">PEAK SECURITY PRIORITY. NO EXCEPTIONS.</div>
+          </div>
+          <span class="item-tag crit">Critical</span>
+        </div>
+        <div class="blog-body">
+          <p>The root account is the AWS account you signed up with using an email and password. It has <em>absolute, unrestricted access</em> to everything in your AWS Organisation. No SCP can restrict it. No permission boundary can limit it. No IAM policy applies to it. It is above every control mechanism you will ever put in place.</p>
+
+          <h4>What root access can do that nothing else can</h4>
+          <div class="kv-list">
+            <div class="kv"><span class="kv-key">Delete member accounts</span><span class="kv-val">Permanently. With all their resources. There is no undo.</span></div>
+            <div class="kv"><span class="kv-key">Remove billing controls</span><span class="kv-val">Detach consolidated billing, remove budget alerts, disable Cost Explorer.</span></div>
+            <div class="kv"><span class="kv-key">Disable CloudTrail org-wide</span><span class="kv-val">Wipe the audit trail retroactively and stop all future logging.</span></div>
+            <div class="kv"><span class="kv-key">Close the AWS account</span><span class="kv-val">Only root can close an account. Once closed, recovery is extremely limited.</span></div>
+          </div>
+
+          <h4>How to lock it down</h4>
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body"><strong>Delete all root access keys</strong> immediately. Go to the root account's Security Credentials page and remove any existing access keys. Root should never authenticate via API — only via the console in emergencies.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body"><strong>Enable MFA on the root account</strong> using a hardware security key (YubiKey or similar) if possible. A TOTP authenticator app is acceptable. SMS is not acceptable — SIM-swapping is a real attack vector.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body"><strong>Store root credentials in a password manager</strong> with access restricted to two or three named individuals maximum. Document who has access. Treat it like physical vault access.</span></div>
+            <div class="blog-step"><span class="step-n">04</span><span class="step-body"><strong>Create a CloudWatch alarm</strong> that triggers when root account login activity is detected in CloudTrail. Any root login — even a legitimate one — should generate an immediate alert to your security team.</span></div>
+            <div class="blog-step"><span class="step-n">05</span><span class="step-body"><strong>Use a dedicated email alias</strong> for the root account that forwards to a distribution list, not a personal inbox. If the owner of that personal email leaves, you risk losing access to the account entirely.</span></div>
+          </div>
+
+          <div class="callout danger">
+            <span class="callout-icon">🔴</span>
+            <span class="callout-text"><strong>Treat root as a break-glass account only.</strong> It should be used a handful of times per year at most — for tasks that explicitly require root such as changing account settings, enabling certain AWS services, or account recovery. Every use should be logged and reviewed.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">Root Account</span><span class="blog-pill">Hardware MFA</span><span class="blog-pill">Break-Glass</span><span class="blog-pill">CloudWatch Alarm</span><span class="blog-pill">Access Keys</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 04 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">04</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">Cost Anomaly Detection &amp; Budget Alerts</div>
+            <div class="blog-entry-hook">Get notified before your costs explode out of control.</div>
+          </div>
+          <span class="item-tag cost">Cost</span>
+        </div>
+        <div class="blog-body">
+          <p>AWS bills are settled at the end of the month. Without active cost monitoring, a single misconfigured resource — a NAT gateway left running, a data transfer charge from an accidentally public bucket, a forgotten GPU instance — can generate a bill that arrives four weeks after the mistake was made. By then, the damage is done.</p>
+
+          <h4>Cost Anomaly Detection</h4>
+          <p>This is an ML-based service that builds a baseline of your normal spend patterns per service, per account, per region, and per cost allocation tag. When it detects a spend pattern that deviates significantly from that baseline, it alerts you — often within hours of the spike starting, not at the end of the month.</p>
+
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Enable it from the management account via <strong>AWS Cost Management → Cost Anomaly Detection</strong>. Create monitors at the org level so it tracks all member accounts.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Create <strong>alert subscriptions</strong> with an absolute or percentage threshold — for example, alert me when anomaly impact exceeds $50 in any 24-hour period. Route alerts to an SNS topic connected to email or Slack.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body"><strong>Expect false positives for the first 4–8 weeks.</strong> The model is calibrating. Do not turn it off. As it learns your baseline, alerts become significantly more accurate and actionable.</span></div>
+          </div>
+
+          <h4>Monthly Budget Alerts</h4>
+          <p>Anomaly Detection is reactive — it catches spikes as they happen. Budget alerts are proactive — they tell you when you're trending toward a threshold. Set them up per account, not just at the org level. A dev account burning $800 in a month is invisible in org-level aggregates but very visible at the account level.</p>
+
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Go to <strong>AWS Budgets</strong> in the management account. Create a budget per member account using a cost budget type.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Set threshold alerts at <strong>50%, 80%, and 100%</strong> of your expected monthly spend. At 50% you're tracking normally. At 80% you investigate. At 100% you act.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">Also set a <strong>forecasted spend alert</strong> — this triggers when AWS forecasts that you will exceed budget by end of month, even if you haven't crossed it yet.</span></div>
+          </div>
+
+          <div class="callout info">
+            <span class="callout-icon">ℹ️</span>
+            <span class="callout-text"><strong>Tag everything from day one.</strong> Cost Anomaly Detection becomes dramatically more useful when you can attribute spikes to a specific team, service, or environment via cost allocation tags. An alert that says "EC2 spend increased by $400" is far less useful than "EC2 spend for the payments service in prod increased by $400."</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">Cost Anomaly Detection</span><span class="blog-pill">AWS Budgets</span><span class="blog-pill">SNS Alerts</span><span class="blog-pill">Cost Allocation Tags</span><span class="blog-pill">Forecasted Spend</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 05 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">05</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">GuardDuty</div>
+            <div class="blog-entry-hook">Someone is mining crypto on your AWS bill right now. Would you even know?</div>
+          </div>
+          <span class="item-tag sec">Security</span>
+        </div>
+        <div class="blog-body">
+          <p>GuardDuty is AWS's threat detection service. It runs continuously in the background, ingesting data from CloudTrail management events, VPC Flow Logs, and DNS resolver logs, and uses machine learning to identify patterns that indicate a security threat. It does not require you to configure log ingestion yourself — enabling it is enough.</p>
+
+          <h4>What it detects</h4>
+          <div class="kv-list">
+            <div class="kv"><span class="kv-key">Cryptomining</span><span class="kv-val">EC2 instances or Lambda functions communicating with known cryptocurrency mining pools. One of the most common attacks on compromised AWS accounts.</span></div>
+            <div class="kv"><span class="kv-key">Credential exfiltration</span><span class="kv-val">API calls being made from unusual geographic locations or Tor exit nodes using your IAM credentials, suggesting they've been stolen.</span></div>
+            <div class="kv"><span class="kv-key">Reconnaissance</span><span class="kv-val">Unusual port scanning or probing of your VPC resources from external IPs.</span></div>
+            <div class="kv"><span class="kv-key">Anomalous IAM activity</span><span class="kv-val">An IAM role suddenly making API calls it has never made before — creating users, modifying security groups, disabling logging.</span></div>
+            <div class="kv"><span class="kv-key">Instance compromise</span><span class="kv-val">EC2 instances communicating with known malicious IPs or command-and-control domains.</span></div>
+          </div>
+
+          <h4>Setting up alerting properly</h4>
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Enable GuardDuty from the management account and <strong>delegate it to a security account</strong> (or the management account itself). This enables it across all member accounts automatically.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Create an <strong>EventBridge rule</strong> that matches GuardDuty findings with severity <code class="code">HIGH</code> or <code class="code">CRITICAL</code>. Route these to an SNS topic. Wire SNS to email, PagerDuty, or a Slack channel via Lambda.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">For <code class="code">MEDIUM</code> severity findings, consider routing to a daily digest rather than immediate alerts. Medium findings are worth reviewing but rarely require waking someone up at 3am.</span></div>
+          </div>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <span class="callout-text"><strong>GuardDuty does not block anything.</strong> It detects and alerts. The response — isolating an instance, revoking credentials, blocking an IP — is yours to execute. Consider using GuardDuty findings to trigger automated Lambda-based remediation for the highest-severity finding types.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">GuardDuty</span><span class="blog-pill">EventBridge</span><span class="blog-pill">Threat Detection</span><span class="blog-pill">Cryptomining</span><span class="blog-pill">Credential Theft</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 06 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">06</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">Inspector</div>
+            <div class="blog-entry-hook">Your infra is being scanned by attackers daily. Are you scanning it first?</div>
+          </div>
+          <span class="item-tag sec">Security</span>
+        </div>
+        <div class="blog-body">
+          <p>GuardDuty watches for active threats. Inspector looks for the vulnerabilities that would make those threats possible in the first place. It continuously scans your EC2 instances, Lambda functions, and container images stored in ECR for known CVEs, software vulnerabilities, and unintended network reachability.</p>
+
+          <h4>What Inspector covers</h4>
+          <div class="kv-list">
+            <div class="kv"><span class="kv-key">EC2 instances</span><span class="kv-val">OS-level vulnerabilities in your running instances — unpatched kernel versions, vulnerable packages, exposed ports that shouldn't be reachable from the internet.</span></div>
+            <div class="kv"><span class="kv-key">Container images (ECR)</span><span class="kv-val">Every image pushed to ECR is automatically scanned against the NVD (National Vulnerability Database). You get a finding for every CVE present in your image layers.</span></div>
+            <div class="kv"><span class="kv-key">Lambda functions</span><span class="kv-val">Package dependencies in your Lambda deployment packages are scanned for known vulnerabilities — the same CVEs that affect your Docker images can exist in your serverless functions.</span></div>
+          </div>
+
+          <h4>The key behaviour to understand</h4>
+          <p>Inspector does not require you to initiate scans. Once enabled, it <em>rescans automatically whenever the NVD is updated</em>. This means a package that was clean when you deployed it last month can generate a new finding today because a CVE was published overnight. You don't need to do anything — you'll just receive the finding.</p>
+
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Enable Inspector from the management account to cover all member accounts. Go to <strong>Amazon Inspector → Get Started</strong> and enable it org-wide.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Route <strong>CRITICAL and HIGH severity findings</strong> to your alerting pipeline via EventBridge, the same way you route GuardDuty findings.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">Integrate Inspector findings into your <strong>CI/CD pipeline</strong>. Before promoting an image from QA to Prod, check if Inspector has raised any critical findings on that image. Fail the pipeline if it has.</span></div>
+          </div>
+
+          <div class="callout tip">
+            <span class="callout-icon">💡</span>
+            <span class="callout-text"><strong>Don't try to fix everything at once.</strong> A fresh Inspector enable on a real workload will surface dozens or hundreds of findings. Triage by severity. Fix CRITICAL findings first, then HIGH. Use suppression rules for findings that are false positives or accepted risks. The goal is a managed queue, not zero findings overnight.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">Inspector</span><span class="blog-pill">CVE Scanning</span><span class="blog-pill">ECR</span><span class="blog-pill">Lambda Security</span><span class="blog-pill">NVD</span><span class="blog-pill">Pipeline Integration</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 07 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">07</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">Security Hub</div>
+            <div class="blog-entry-hook">You can't fix what you can't see. This is your security in one view.</div>
+          </div>
+          <span class="item-tag sec">Security</span>
+        </div>
+        <div class="blog-body">
+          <p>Once you enable GuardDuty, Inspector, Macie, and other security services across a multi-account AWS Organisation, findings exist in isolation across dozens of separate dashboards. Security Hub is the aggregation layer that pulls all of those findings into a single pane, normalises them into a common format, and scores your environment against recognised security standards.</p>
+
+          <h4>What Security Hub provides</h4>
+          <div class="kv-list">
+            <div class="kv"><span class="kv-key">Findings aggregation</span><span class="kv-val">GuardDuty alerts, Inspector CVEs, Macie data exposure findings, IAM Access Analyzer results — all in one place, searchable and filterable.</span></div>
+            <div class="kv"><span class="kv-key">Security standards scoring</span><span class="kv-val">Continuous automated checks against CIS AWS Foundations Benchmark, AWS Foundational Security Best Practices, and PCI DSS. You get a score and a prioritised list of controls you're failing.</span></div>
+            <div class="kv"><span class="kv-key">Cross-account visibility</span><span class="kv-val">With a delegated admin account set up, Security Hub shows you findings across every member account in your organisation from a single console.</span></div>
+          </div>
+
+          <h4>How to set it up</h4>
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Enable Security Hub from the management account and <strong>designate a delegated administrator</strong> — typically a dedicated security account. This aggregates findings from all member accounts automatically.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Enable the <strong>AWS Foundational Security Best Practices</strong> standard as a baseline. It covers over 200 automated checks across IAM, S3, EC2, RDS, and more. Enable CIS AWS Foundations Benchmark if you have compliance requirements.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">Use <strong>Security Hub Insights</strong> — saved filters — to create views for your most critical finding types. For example: all CRITICAL findings in prod accounts, all unresolved findings older than 30 days, all failed CIS controls.</span></div>
+            <div class="blog-step"><span class="step-n">04</span><span class="step-body">Route Security Hub findings to EventBridge and <strong>create automated response playbooks</strong> for common finding types using Lambda — for example, automatically revoke a publicly exposed S3 bucket ACL when Security Hub detects one.</span></div>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">Security Hub</span><span class="blog-pill">CIS Benchmark</span><span class="blog-pill">FSBP</span><span class="blog-pill">Posture Management</span><span class="blog-pill">Delegated Admin</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 08 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">08</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">CloudTrail</div>
+            <div class="blog-entry-hook">Every action. Every account. Every user. All logged.</div>
+          </div>
+          <span class="item-tag sec">Security</span>
+        </div>
+        <div class="blog-body">
+          <p>CloudTrail records every API call made in your AWS accounts — every <span class="code">CreateInstance</span>, every <span class="code">DeleteBucket</span>, every <span class="code">AssumeRole</span>. It captures who made the call, from which IP address, at what time, with what parameters, and whether it succeeded or was denied. It is the foundational audit trail that every other security service depends on.</p>
+
+          <h4>What you need to know about the default behaviour</h4>
+          <p>CloudTrail's Event History in the console gives you 90 days of management events for free, but this is <em>not</em> a Trail. It cannot be searched programmatically, cannot be exported, and vanishes after 90 days with no recovery option. For any real use, you need to create an <em>org-wide Trail</em>.</p>
+
+          <h4>How to set it up properly</h4>
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">01</span><span class="step-body">Create an <strong>org-wide Trail</strong> from the management account. This automatically captures events from all current and future member accounts. Go to CloudTrail → Create Trail → Enable for all accounts in my organisation.</span></div>
+            <div class="blog-step"><span class="step-n">02</span><span class="step-body">Point the Trail at <strong>an S3 bucket in a dedicated logging account</strong>, not the management account. Use a bucket policy that prevents even the management account from deleting logs. This ensures that a compromised management account cannot erase the audit trail.</span></div>
+            <div class="blog-step"><span class="step-n">03</span><span class="step-body">Enable <strong>Log File Validation</strong>. This creates a hash-based digest of every log file, allowing you to detect if any log file has been tampered with or deleted after the fact.</span></div>
+            <div class="blog-step"><span class="step-n">04</span><span class="step-body">Enable <strong>CloudWatch Logs integration</strong> so Trail events are streamed to CloudWatch in near real-time. This enables you to create metric filters and alarms — for example, alert on any root account login, any failed auth attempt exceeding a threshold, or any SCP modification.</span></div>
+            <div class="blog-step"><span class="step-n">05</span><span class="step-body">Ship CloudTrail logs to your <strong>SIEM or log aggregation tool</strong> — Datadog, Splunk, OpenSearch, or similar. Set <em>S3 retention to at least 1 year</em>. Incident investigations and compliance audits regularly require looking further back than 90 days, and having that data indexed and searchable is the difference between a two-hour investigation and a two-week one.</span></div>
+          </div>
+
+          <div class="callout warn">
+            <span class="callout-icon">⚠️</span>
+            <span class="callout-text"><strong>Data events cost money.</strong> Management events (API calls to AWS services) are free for one Trail. Data events (S3 object-level activity, Lambda invocations) are charged per 100K events. Enable data events selectively — for your most sensitive S3 buckets and critical Lambda functions — rather than org-wide, or your CloudTrail bill will surprise you.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">CloudTrail</span><span class="blog-pill">Org-Wide Trail</span><span class="blog-pill">Log Validation</span><span class="blog-pill">S3 Retention</span><span class="blog-pill">CloudWatch Alarms</span><span class="blog-pill">SIEM</span></div>
+        </div>
+      </div>
+
+      <!-- ════ 09 ════ -->
+      <div class="blog-entry">
+        <div class="blog-entry-header">
+          <span class="blog-num">09</span>
+          <div class="blog-title-wrap">
+            <div class="blog-entry-title">Service Control Policies (SCPs)</div>
+            <div class="blog-entry-hook">The second decision that makes or breaks your compliance.</div>
+          </div>
+          <span class="item-tag aws">AWS</span>
+        </div>
+        <div class="blog-body">
+          <p>SCPs are policies attached to your AWS Organisation, OUs (Organisational Units), or individual member accounts that define the <em>maximum permissions</em> anyone in that account can ever have. They sit above IAM. A permission granted by IAM is still blocked if the SCP doesn't allow it. Even an account's root user is constrained by SCPs when accessed through the organisation.</p>
+
+          <h4>How they differ from IAM policies</h4>
+          <p>IAM policies say what a specific user, role, or service <em>is allowed to do</em>. SCPs say what is <em>possible to do at all</em> within an account or OU. You use SCPs to draw a hard boundary around the entire account — IAM then manages permissions within that boundary. A developer in the dev account can't accidentally create a resource in a restricted region even if their IAM policy allows it, because the SCP blocks it org-wide.</p>
+
+          <h4>SCPs to implement from day one</h4>
+
+          <div class="blog-steps">
+            <div class="blog-step"><span class="step-n">→</span><span class="step-body"><strong>Require tags on resource creation.</strong> Deny the creation of EC2 instances, RDS databases, ECS services, Load Balancers, and S3 buckets unless they include mandatory tags like <span class="code">Environment</span>, <span class="code">Team</span>, and <span class="code">Project</span>. Without this, cost attribution becomes guesswork within weeks of onboarding a second team.</span></div>
+            <div class="blog-step"><span class="step-n">→</span><span class="step-body"><strong>Enforce EBS volume encryption.</strong> Deny the creation of any unencrypted EBS volume. This is one line in an SCP and it prevents a common compliance gap that auditors look for in every SOC 2 and ISO 27001 review.</span></div>
+            <div class="blog-step"><span class="step-n">→</span><span class="step-body"><strong>Restrict API activity to approved regions.</strong> If your operations run in <span class="code">us-east-1</span>, write an SCP that denies all API actions in every other region. This prevents accidental resource provisioning outside your monitored perimeter and dramatically reduces your attack surface. Exemptions can be added for global services like IAM and CloudFront.</span></div>
+            <div class="blog-step"><span class="step-n">→</span><span class="step-body"><strong>Prevent disabling security services.</strong> Write an SCP that denies <span class="code">guardduty:DeleteDetector</span>, <span class="code">cloudtrail:StopLogging</span>, <span class="code">securityhub:DisableSecurityHub</span>, and similar actions. This ensures that even an account administrator cannot disable your security monitoring.</span></div>
+            <div class="blog-step"><span class="step-n">→</span><span class="step-body"><strong>Deny leaving the organisation.</strong> An SCP that denies <span class="code">organizations:LeaveOrganization</span> prevents a member account from detaching itself from your org — which would immediately remove all SCP-based controls from that account.</span></div>
+          </div>
+
+          <div class="callout danger">
+            <span class="callout-icon">🔴</span>
+            <span class="callout-text"><strong>Test SCPs in non-prod OUs first.</strong> A poorly written SCP can silently block legitimate operations without an obvious error message. Users will just see Access Denied and have no idea why. Apply new SCPs to a test OU, verify nothing breaks, then roll out to prod accounts. Rollback is fast but the blast radius of a bad SCP is everything in that account.</span>
+          </div>
+
+          <div class="blog-pills"><span class="blog-pill">SCPs</span><span class="blog-pill">Resource Tagging</span><span class="blog-pill">Region Restriction</span><span class="blog-pill">EBS Encryption</span><span class="blog-pill">GuardRails</span><span class="blog-pill">Org Policy</span></div>
+        </div>
+      </div>
+
+      <div class="blog-footer">
+        <p>That's the foundation. Nine decisions, made correctly on day one, that will save you months of pain down the road.</p>
+        <div class="btn-row" style="justify-content:center; margin-top:0;">
+          <button class="btn-g" onclick="goTo(2)">← Back to Checklist</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<script>
+  let current = 0;
+  const total = 4;
+
+  function goTo(n) {
+    const prev = document.getElementById('slide-' + current);
+    prev.classList.remove('active');
+    if (n > current) prev.classList.add('exit-left');
+    setTimeout(() => prev.classList.remove('exit-left'), 550);
+    current = n;
+    const next = document.getElementById('slide-' + current);
+    next.style.transform = n > current - 1 ? 'translateX(48px)' : 'translateX(-48px)';
+    requestAnimationFrame(() => next.classList.add('active'));
+    if (n === 3) { setTimeout(() => { const bo = document.querySelector('.blog-outer'); if (bo) bo.scrollTop = 0; }, 100); }
+    updateUI();
+  }
+
+  function navigate(dir) {
+    const n = current + dir;
+    if (n < 0 || n >= total) return;
+    goTo(n);
+  }
+
+  function updateUI() {
+    document.getElementById('btnPrev').classList.toggle('disabled', current === 0);
+    document.getElementById('btnNext').classList.toggle('disabled', current === total - 1);
+    document.getElementById('slideNum').textContent =
+      String(current + 1).padStart(2,'0') + ' / ' + String(total).padStart(2,'0');
+    document.querySelectorAll('.dot').forEach((d,i) => d.classList.toggle('active', i === current));
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') navigate(1);
+    if (e.key === 'ArrowLeft')  navigate(-1);
+  });
+
+  let tx = 0;
+  document.addEventListener('touchstart', e => tx = e.touches[0].clientX);
+  document.addEventListener('touchend', e => {
+    const dx = tx - e.changedTouches[0].clientX;
+    if (Math.abs(dx) > 50) navigate(dx > 0 ? 1 : -1);
+  });
+</script>
+</body>
+</html>
