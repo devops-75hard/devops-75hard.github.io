@@ -212,6 +212,9 @@ target_groups = {
     target_type = "instance"
     port        = 80
     protocol    = "HTTP"
+    health_check = {
+      path = "/xyz"
+    }
   }
 
   "app3-green" = {
