@@ -1,19 +1,19 @@
 {
   "applications": [
     {
-      "name": "frontend",
-      "repo": "https://github.com/devops-75hard/frontend.git",
-      "branch": "main"
+      "name": "node-app",
+      "repo": "https://github.com/dockersamples/node-bulletin-board.git",
+      "branch": "master"
     },
     {
-      "name": "backend-api",
-      "repo": "https://github.com/devops-75hard/backend-api.git",
-      "branch": "main"
+      "name": "flask-app",
+      "repo": "https://github.com/dockersamples/flask-app.git",
+      "branch": "master"
     },
     {
-      "name": "auth-service",
-      "repo": "https://github.com/devops-75hard/auth-service.git",
-      "branch": "main"
+      "name": "static-site",
+      "repo": "https://github.com/dockersamples/static-site.git",
+      "branch": "master"
     }
   ]
 }
