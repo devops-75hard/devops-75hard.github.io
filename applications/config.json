@@ -1,0 +1,19 @@
+{
+  "applications": [
+    {
+      "name": "frontend",
+      "repo": "https://github.com/devops-75hard/frontend.git",
+      "branch": "main"
+    },
+    {
+      "name": "backend-api",
+      "repo": "https://github.com/devops-75hard/backend-api.git",
+      "branch": "main"
+    },
+    {
+      "name": "auth-service",
+      "repo": "https://github.com/devops-75hard/auth-service.git",
+      "branch": "main"
+    }
+  ]
+}
