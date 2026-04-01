@@ -12,7 +12,7 @@ config.applications.each { app ->
         definition {
             cps {
                 script("""
-@Library('jenkins') _
+@Library('75hardevops') _
 
 pipeline {
     agent any
