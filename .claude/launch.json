@@ -1,0 +1,41 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev-network-plan",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/dev/platform/network", "plan"],
+      "port": null
+    },
+    {
+      "name": "dev-network-apply",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/dev/platform/network", "apply", "-auto-approve"],
+      "port": null
+    },
+    {
+      "name": "dev-sg-plan",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/dev/platform/sg", "plan"],
+      "port": null
+    },
+    {
+      "name": "dev-sg-apply",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/dev/platform/sg", "apply", "-auto-approve"],
+      "port": null
+    },
+    {
+      "name": "prod-network-plan",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/prod/platform/network", "plan"],
+      "port": null
+    },
+    {
+      "name": "prod-network-apply",
+      "runtimeExecutable": "terraform",
+      "runtimeArgs": ["-chdir=env/prod/platform/network", "apply", "-auto-approve"],
+      "port": null
+    }
+  ]
+}

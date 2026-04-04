@@ -2,8 +2,8 @@ vpc_name = "vpc1"
 
 security_groups = {
 
-  "common" = {
-    description = "Common Platform SG: SSH from VPC, all traffic from public and private SG"
+  "sg" = {
+    description = "Common Platform SG: SSH from VPC, all traffic from lb and app SG"
     ingress_rules = {
       "ssh" = {
         from_port   = 22
@@ -11,17 +11,17 @@ security_groups = {
         protocol    = "tcp"
         cidr_blocks = ["10.0.0.0/16"]
       }
-      "from-public" = {
-        from_port      = 0
-        to_port        = 0
-        protocol       = "-1"
-        source_sg_key  = "public"
+      "from-lb" = {
+        from_port     = 0
+        to_port       = 0
+        protocol      = "-1"
+        source_sg_key = "lb"
       }
-      "from-private" = {
-        from_port      = 0
-        to_port        = 0
-        protocol       = "-1"
-        source_sg_key  = "private"
+      "from-app" = {
+        from_port     = 0
+        to_port       = 0
+        protocol      = "-1"
+        source_sg_key = "app"
       }
     }
     egress_rules = {
@@ -34,8 +34,8 @@ security_groups = {
     }
   }
 
-  "public" = {
-    description = "Public Load Balancer SG: 80/443 open to internet"
+  "lb" = {
+    description = "Load Balancer SG: 80/443 open to internet"
     ingress_rules = {
       "http" = {
         from_port   = 80
@@ -60,8 +60,8 @@ security_groups = {
     }
   }
 
-  "private" = {
-    description = "Private SG: 80/443 restricted to VPC CIDR only"
+  "app" = {
+    description = "App SG: 80/443 restricted to VPC CIDR only"
     ingress_rules = {
       "http" = {
         from_port   = 80
