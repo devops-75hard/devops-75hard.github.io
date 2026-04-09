@@ -2,12 +2,12 @@
   "applications": [
     {
       "name": "node-app",
-      "repo": "https://github.com/dockersamples/node-bulletin-board.git",
+      "repo": "https://github.com/acemilyalcin/sample-node-project.git",
       "branch": "master"
     },
     {
       "name": "flask-app",
-      "repo": "https://github.com/dockersamples/flask-app.git",
+      "repo": "https://github.com/lvthillo/python-flask-docker.git",
       "branch": "master"
     },
     {
