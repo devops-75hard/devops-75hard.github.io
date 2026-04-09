@@ -173,6 +173,33 @@ security_groups = {
       }
     }
   }
+
+  "application4" = {
+    description = "SG for application4, inbound from loadbalancer"
+    vpc_key     = "vpc1"
+    tags = {
+      tier  = "application4"
+      owner = "devops"
+    }
+    ingress_rules = {
+      "allow-lb" = {
+        description               = "Allow inbound from loadbalancer SG"
+        from_port                 = 8080
+        to_port                   = 8080
+        protocol                  = "tcp"
+        source_security_group_key = "loadbalancer"
+      }
+    }
+    egress_rules = {
+      "all-out" = {
+        description = "All outbound"
+        from_port   = 0
+        to_port     = 0
+        protocol    = "-1"
+        cidr_blocks = ["0.0.0.0/0"]
+      }
+    }
+  }
 }
 
 target_groups = {
