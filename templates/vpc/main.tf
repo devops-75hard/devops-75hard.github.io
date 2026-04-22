@@ -1,19 +1,19 @@
 module "vpc" {
-  source     = "../../modules/vpc"
+  source     = "../../modules/network/vpc"
   name       = "${var.prefix}-${var.env}-${var.name}"
   cidr_block = var.cidr_block
   tags       = local.common_tags
 }
 
 module "igw" {
-  source = "../../modules/igw"
+  source = "../../modules/network/igw"
   vpc_id = module.vpc.vpc_id
   name   = "${var.prefix}-${var.env}-${var.name}-igw"
   tags   = local.common_tags
 }
 
 module "public_subnets" {
-  source   = "../../modules/subnet"
+  source   = "../../modules/network/subnet"
   for_each = var.public_subnets
 
   vpc_id            = module.vpc.vpc_id
@@ -24,7 +24,7 @@ module "public_subnets" {
 }
 
 module "private_subnets" {
-  source   = "../../modules/subnet"
+  source   = "../../modules/network/subnet"
   for_each = var.private_subnets
 
   vpc_id            = module.vpc.vpc_id
@@ -35,7 +35,7 @@ module "private_subnets" {
 }
 
 module "nat_gateways" {
-  source   = "../../modules/nat"
+  source   = "../../modules/network/nat"
   for_each = local.nat_gateways
 
   public_subnet_id = module.public_subnets[each.key].id
@@ -45,14 +45,14 @@ module "nat_gateways" {
 }
 
 module "public_rt" {
-  source = "../../modules/rt"
+  source = "../../modules/network/rt"
   vpc_id = module.vpc.vpc_id
   name   = "${var.prefix}-${var.env}-${var.name}-public-rt"
   tags   = local.common_tags
 }
 
 module "private_rt" {
-  source   = "../../modules/rt"
+  source   = "../../modules/network/rt"
   for_each = local.nat_gateways
 
   vpc_id = module.vpc.vpc_id
@@ -89,7 +89,7 @@ resource "aws_route_table_association" "private" {
 }
 
 module "isolated_rt" {
-  source = "../../modules/rt"
+  source = "../../modules/network/rt"
   vpc_id = module.vpc.vpc_id
   name   = "${var.prefix}-${var.env}-${var.name}-isolated-rt"
   tags   = local.common_tags

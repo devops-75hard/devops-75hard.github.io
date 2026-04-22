@@ -1,5 +1,5 @@
 module "vpcs" {
-  source   = "../../../../services/vpc"
+  source   = "../../../../templates/vpc"
   for_each = var.vpcs
 
   env             = local.env
