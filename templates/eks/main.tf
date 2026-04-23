@@ -3,8 +3,8 @@ module "cluster" {
 
   name               = "${var.prefix}-${var.env}-${var.name}"
   kubernetes_version = var.kubernetes_version
-  role_arn           = var.role_arn
-  subnet_ids         = var.subnet_ids
+  role_arn           = local.role_arn
+  subnet_ids         = local.subnet_ids
   security_group_ids = var.security_group_ids
   tags               = local.common_tags
 }
@@ -15,8 +15,8 @@ module "node_groups" {
 
   cluster_name   = module.cluster.name
   name           = "${var.prefix}-${var.env}-${each.key}"
-  node_role_arn  = var.node_role_arn
-  subnet_ids     = var.subnet_ids
+  node_role_arn  = local.node_role_arn
+  subnet_ids     = local.subnet_ids
   instance_types = each.value.instance_types
   ami_type       = each.value.ami_type
   capacity_type  = each.value.capacity_type
@@ -26,12 +26,14 @@ module "node_groups" {
   tags           = local.common_tags
 }
 
-module "pod_identity_agent" {
-  source = "../../modules/eks/addon"
+module "addons" {
+  source   = "../../modules/eks/addon"
+  for_each = var.addons
 
-  cluster_name = module.cluster.name
-  addon_name   = "eks-pod-identity-agent"
-  tags         = local.common_tags
+  cluster_name  = module.cluster.name
+  addon_name    = each.key
+  addon_version = each.value.version
+  tags          = local.common_tags
 
   depends_on = [module.node_groups]
 }

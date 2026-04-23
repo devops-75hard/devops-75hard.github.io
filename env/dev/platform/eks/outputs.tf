@@ -1,13 +1,14 @@
-output "cluster_name" {
-  description = "Name of the EKS cluster"
-  value       = module.eks.cluster_name
+output "cluster_names" {
+  description = "Map of cluster names keyed by cluster key"
+  value       = { for k, v in module.eks : k => v.cluster_name }
 }
 
-output "cluster_endpoint" {
-  description = "Private API server endpoint"
-  value       = module.eks.cluster_endpoint
+output "cluster_endpoints" {
+  description = "Map of cluster endpoints keyed by cluster key"
+  value       = { for k, v in module.eks : k => v.cluster_endpoint }
 }
 
 output "node_group_names" {
-  value = module.eks.node_group_names
+  description = "Map of node group name maps keyed by cluster key"
+  value       = { for k, v in module.eks : k => v.node_group_names }
 }

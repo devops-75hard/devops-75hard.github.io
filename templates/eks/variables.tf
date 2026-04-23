@@ -1,46 +1,55 @@
 variable "env" {
-  description = "Environment name (e.g. dev, prod)"
-  type        = string
+  type = string
 }
 
 variable "prefix" {
-  description = "Project name prefix"
-  type        = string
+  type = string
 }
 
 variable "name" {
-  description = "Cluster short name (e.g. cluster)"
-  type        = string
+  type = string
 }
 
 variable "kubernetes_version" {
-  description = "Kubernetes version for the EKS cluster"
+  type = string
+}
+
+variable "role_arn_key" {
+  description = "Key into all_role_arns for the EKS control plane role"
   type        = string
 }
 
-variable "role_arn" {
-  description = "ARN of the IAM role for the EKS control plane"
+variable "node_role_arn_key" {
+  description = "Key into all_role_arns for the EKS node role"
   type        = string
 }
 
-variable "node_role_arn" {
-  description = "ARN of the IAM role for EKS worker nodes"
+variable "vpc_key" {
+  description = "Key into all_private_subnet_ids to select the VPC"
   type        = string
 }
 
-variable "subnet_ids" {
-  description = "Private subnet IDs (NAT-attached) for the cluster and node groups"
+variable "subnet_keys" {
+  description = "List of subnet keys within the selected VPC"
   type        = list(string)
+}
+
+variable "all_private_subnet_ids" {
+  description = "Full private_subnet_ids map from network remote state"
+  type        = map(map(string))
+}
+
+variable "all_role_arns" {
+  description = "Full role_arns map from IAM remote state"
+  type        = map(string)
 }
 
 variable "security_group_ids" {
-  description = "Additional security group IDs to attach to the cluster"
-  type        = list(string)
-  default     = []
+  type    = list(string)
+  default = []
 }
 
 variable "node_groups" {
-  description = "Map of managed node group configurations"
   type = map(object({
     instance_types = optional(list(string), ["t3.medium"])
     ami_type       = optional(string, "AL2023_x86_64_STANDARD")
@@ -51,8 +60,15 @@ variable "node_groups" {
   }))
 }
 
+variable "addons" {
+  description = "Map of EKS addons keyed by addon name"
+  type = map(object({
+    version = optional(string, null)
+  }))
+  default = {}
+}
+
 variable "tags" {
-  description = "Additional tags to merge with common tags"
-  type        = map(string)
-  default     = {}
+  type    = map(string)
+  default = {}
 }
